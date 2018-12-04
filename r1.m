@@ -65,6 +65,9 @@ position = cumtrapz(time,velocity);
 %this the last useful step of the simulation
 endOfUsefulData = 0;
 
+%this is the max altitude
+maxAltitude = -999999999999; 
+
 %We now ITERATE the position until it is equal or less than 0
 %we start ITERATING not from 0, but from a safe value, to avoid "matching" the initial condition
 for t = 50:1:(endTime/dt) 
@@ -73,8 +76,14 @@ for t = 50:1:(endTime/dt)
     endOfUsefulData = t;
     break %terminate the Iteration, we have finished here
   end
+  
+  if pos > maxAltitude
+    maxAltitude = pos; 
+   end
 end
 
+disp('This is the maximum altitude reached')
+maxAltitude
 
 %i have no idea what is the built in function to take a subarray
 %do a copy of the original 
