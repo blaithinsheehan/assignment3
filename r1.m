@@ -105,6 +105,9 @@ for t = 1:1:endOfUsefulData
  time(t) = t*dt;
 end
 
+%velocity at impact(position 0)
+disp('Speed before the impact')
+disp(velocity(endOfUsefulData)) 
 
 
 %plot results
