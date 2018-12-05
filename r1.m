@@ -27,6 +27,7 @@ maxAltitude = 9999999999;
 endOfUsefulData = 0;
 pos = 0;
 vel = 0;
+dragVector = zeros(1,endTime/dt);
 %start a loop to calcualte our equations of motion at each Time Step
 
 for t = 1:1:(endTime/dt) %   t is the current TimeStep
@@ -46,10 +47,14 @@ for t = 1:1:(endTime/dt) %   t is the current TimeStep
     
     %1000 is added because else this drag is irrelevant compared to the trust and weight
     drag = 0.5 * density * (vel * vel) * area * dragCoeficient * 1000;
+    dragVector(t)=drag;
+    
+    
     if t <= (burnTime/dt) %while the engines are firing
         acceleration(t) =  (engineThrust - drag - weight) / massTotal;
     else %when the engines have stopped firing
       if vel > 0
+      %this is just a trick to avoid having a "pushing" drag 
         drag = drag * -1;
       end
         acceleration(t) =  (drag - weight) /massTotal;
@@ -57,7 +62,9 @@ for t = 1:1:(endTime/dt) %   t is the current TimeStep
     end
 
     
+    
 time(t) = t*dt; % update the time vector with the new time step
+
 
 if t == 1350
  cry = 0;
@@ -74,7 +81,7 @@ velocity = cumtrapz(time,acceleration);
 position = cumtrapz(time,velocity);
 
 %Current position (and velocity) are computed BAD, so take two step ago, to be safe
-  if t > 15
+  if t > 3
     pos = position(t - 1);
     vel = velocity(t - 1);
   else
@@ -94,16 +101,19 @@ end
 velocityOld = velocity;
 positionOld = position;
 accelerationOld = acceleration;
+dragVectorOld = dragVector;
 
 velocity = zeros(1,endOfUsefulData);
 position  = zeros(1,endOfUsefulData);
 acceleration  = zeros(1,endOfUsefulData);
 time = zeros(1,endOfUsefulData);
+dragVector = zeros(1,endOfUsefulData);
 
 for t = 1:1:endOfUsefulData
  velocity(t) = velocityOld(t);
  position(t)  = positionOld(t);
  acceleration(t) = accelerationOld(t);
+ dragVector(t) = dragVectorOld(t);
  time(t) = t*dt;
 end
 
@@ -130,5 +140,11 @@ xlabel('Time - (s)')
 ylabel('Height - (m)')
 grid on
 
+figure();
+plot(time, dragVector)
+title ('Drag vs Time - Simple Rocket')
+xlabel('Time - (s)')
+ylabel('Drag - (N)')
+grid on
 
 
