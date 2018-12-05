@@ -5,7 +5,6 @@ close all % closes any plots open from previous runs
 %load without using the native method the density of the air file
 load('densityVector.mat')
 
-
 %List all the variables needed
 
 massEmptyRocket = 1500; % kg
@@ -34,7 +33,17 @@ for t = 1:1:(endTime/dt) %   t is the current TimeStep
 
 %Equation of motion
     km = floor(pos / 1000) + 1; %we already compensated for matlab deficiencies
-    density = densityVector(km);
+    resto = 1000 + pos - km * 1000; %counter compensate for the matlab quirkness of non zero starting array
+    
+    density1 = densityVector(km);
+    density2 = densityVector(km + 1);
+    densityDelta = (density2 - density1) / 1000;
+    
+    
+    
+    density = density1;
+    density += densityDelta * resto;
+    
     %1000 is added because else this drag is irrelevant compared to the trust and weight
     drag = 0.5 * density * (vel * vel) * area * dragCoeficient * 1000;
     if t <= (burnTime/dt) %while the engines are firing
@@ -45,8 +54,8 @@ for t = 1:1:(endTime/dt) %   t is the current TimeStep
 
     
 time(t) = t*dt; % update the time vector with the new time step
-if t == 380
- cry = 0
+if t == 440
+ cry = 0;
 end
 
 %Calculate the velocity and Position, by integrating.
