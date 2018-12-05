@@ -43,10 +43,18 @@ burnTime = 60; %Time Engines are firing for.
 %start a loop to calcualte our equations of motion at each Time Step
 
 
+%this is the max altitude
+maxAltitude = -999999999999; 
+lastTimeTick = 0;
+
 
 %positions must be integers so divide by dt and multiply at at the end 
 
 for t = 1:1:(endTime/dt) %   t is the current TimeStep
+%Calculate the velocity and Position, by integrating.
+velocity = cumtrapz(time,acceleration);
+position = cumtrapz(time,velocity);
+
 %Equation of motion
     if t <= (burnTime/dt) %while the engines are firing
         acceleration(t) =  (engineThrust - drag - weight) /massTotal;
@@ -54,62 +62,32 @@ for t = 1:1:(endTime/dt) %   t is the current TimeStep
         acceleration(t) =  (-drag - weight) /massTotal;
     end
 time(t) = t*dt; % update the time vector with the new time step
-end
+lastTimeTick = t;
 
 
 
-%take out of the for loop to optimize code, no reason to recompute each time 
-%(just adding a dt bit), and discard the old result
-%Calculate the velocity and Position, by integrating.
-velocity = cumtrapz(time,acceleration);
-position = cumtrapz(time,velocity);
+%current position
+pos = position(t);
 
-%this the last useful step of the simulation
-endOfUsefulData = 0;
-
-%this is the max altitude
-maxAltitude = -999999999999; 
-
-%We now ITERATE the position until it is equal or less than 0
-%we start ITERATING not from 0, but from a safe value, to avoid "matching" the initial condition
-for t = 50:1:(endTime/dt) 
-  pos = position(t);
-  if pos <= 0
-    endOfUsefulData = t;
-    break %terminate the Iteration, we have finished here
+%skip initial timestep due to error in computing the initial space integral
+if t > 100 pos < 0
+    break %terminate the Simulation, we have finished here
   end
   
-  if pos > maxAltitude
+   if pos > maxAltitude
     maxAltitude = pos; 
    end
+   
 end
+
 
 disp('This is the maximum altitude reached')
 maxAltitude
 
-%i have no idea what is the built in function to take a subarray
-%do a copy of the original 
-
-velocityOld = velocity;
-positionOld = position;
-accelerationOld = acceleration;
-
-
-velocity = zeros(1,endOfUsefulData);
-position  = zeros(1,endOfUsefulData);
-acceleration  = zeros(1,endOfUsefulData);
-time = zeros(1,endOfUsefulData);
-
-for t = 1:1:endOfUsefulData
- velocity(t) = velocityOld(t);
- position(t)  = positionOld(t);
- acceleration(t) = accelerationOld(t);
- time(t) = t*dt;
-end
 
 %velocity at impact(position 0)
 disp('Speed before the impact')
-disp(velocity(endOfUsefulData)) 
+disp(velocity(lastTimeTick)) 
 
 
 %plot results
