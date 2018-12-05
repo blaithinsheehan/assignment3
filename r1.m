@@ -9,25 +9,28 @@ load('densityVector.mat')
 
 massEmptyRocket = 1500; % kg
 startingMassFuel = 7000; % kg
+actualMassFuel = startingMassFuel;
 massHorse = 75; %kg
-massTotal = massEmptyRocket + startingMassFuel +massHorse; % kg
+fixedMass = massEmptyRocket + massHorse; % kg
 engineThrust = 	130000; %N
 area = 2 * 3.14;
 gravity = 9.81; %m/s/s
 density = 1.225; %kg/m3
 dragCoeficient = .05;
 drag = 0; % no drag
-weight = massTotal * gravity; %Constant for now
 dt = .1; % timeStep duration in seconds
-endTime = 150; % Seconds
+endTime = 550; % Seconds
+
 acceleration = zeros(1,endTime/dt); %Create empty vector of zeros for Acceleration Data the length of the simulation
 time = zeros(1,endTime/dt);  ; %Create empty vector of zeros for time Data
 burnTime = 60; %Time Engines are firing for.
+fuelConsumptionRate = startingMassFuel / (burnTime / dt);
 maxAltitude = 9999999999;
 endOfUsefulData = 0;
 pos = 0;
 vel = 0;
 dragVector = zeros(1,endTime/dt);
+fuelMassVector  = zeros(1,endTime/dt);
 %start a loop to calcualte our equations of motion at each Time Step
 
 for t = 1:1:(endTime/dt) %   t is the current TimeStep
@@ -49,18 +52,30 @@ for t = 1:1:(endTime/dt) %   t is the current TimeStep
     drag = 0.5 * density * (vel * vel) * area * dragCoeficient * 1000;
     dragVector(t)=drag;
     
+    totalMass = fixedMass + actualMassFuel;
+    fuelMassVector(t) = actualMassFuel;
+    weight = totalMass * gravity;
     
     if t <= (burnTime/dt) %while the engines are firing
-        acceleration(t) =  (engineThrust - drag - weight) / massTotal;
+        acceleration(t) =  (engineThrust - drag - weight) / totalMass;
+        actualMassFuel -= fuelConsumptionRate;
+       
     else %when the engines have stopped firing
       if vel > 0
       %this is just a trick to avoid having a "pushing" drag 
         drag = drag * -1;
+      else
+        cry = 1;
       end
-        acceleration(t) =  (drag - weight) /massTotal;
-        acc = acceleration(t);
+        acc = (drag - weight) / totalMass;
+        if acc > 0
+        %this is impossible, drag can only lower accelleration
+          acc = 0;
+        end
+        acceleration(t) =  acc;
     end
 
+    
     
     
 time(t) = t*dt; % update the time vector with the new time step
@@ -102,18 +117,21 @@ velocityOld = velocity;
 positionOld = position;
 accelerationOld = acceleration;
 dragVectorOld = dragVector;
+fuelMassVectorOld = fuelMassVector;
 
 velocity = zeros(1,endOfUsefulData);
 position  = zeros(1,endOfUsefulData);
 acceleration  = zeros(1,endOfUsefulData);
 time = zeros(1,endOfUsefulData);
 dragVector = zeros(1,endOfUsefulData);
+fuelMassVector = zeros(1,endOfUsefulData);
 
 for t = 1:1:endOfUsefulData
  velocity(t) = velocityOld(t);
  position(t)  = positionOld(t);
  acceleration(t) = accelerationOld(t);
  dragVector(t) = dragVectorOld(t);
+ fuelMassVector(t) = fuelMassVectorOld(t);
  time(t) = t*dt;
 end
 
@@ -147,4 +165,9 @@ xlabel('Time - (s)')
 ylabel('Drag - (N)')
 grid on
 
-
+figure();
+plot(time, fuelMassVector)
+title ('Fuel Mass vs Time - Simple Rocket')
+xlabel('Time - (s)')
+ylabel('Fuel Mass - (Kg)')
+grid on
