@@ -2,10 +2,12 @@ clear variables % clear any old variables in the workspace
 
 close all % closes any plots open from previous runs
 
+
+%load without using the native method the density of the air file
+load('densityVector.mat')
+
+
 %List all the variables needed
-
-
-
 massEmptyRocket = 1500; % kg
 
 startingMassFuel = 7000; % kg
