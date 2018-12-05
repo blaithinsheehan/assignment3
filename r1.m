@@ -49,12 +49,23 @@ for t = 1:1:(endTime/dt) %   t is the current TimeStep
     if t <= (burnTime/dt) %while the engines are firing
         acceleration(t) =  (engineThrust - drag - weight) / massTotal;
     else %when the engines have stopped firing
-        acceleration(t) =  (-drag - weight) /massTotal;
+      if vel > 0
+        drag = drag * -1;
+      end
+        acceleration(t) =  (drag - weight) /massTotal;
+        acc = acceleration(t);
     end
 
     
 time(t) = t*dt; % update the time vector with the new time step
-if t == 440
+
+if t == 1350
+ cry = 0;
+end
+
+
+
+if t == 1450
  cry = 0;
 end
 
