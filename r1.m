@@ -1,5 +1,11 @@
 clear variables % clear any old variables in the workspace
 close all % closes any plots open from previous runs
+
+
+%load without using the native method the density of the air file
+load('densityVector.mat')
+
+
 %List all the variables needed
 
 massEmptyRocket = 1500; % kg
@@ -7,6 +13,7 @@ startingMassFuel = 7000; % kg
 massHorse = 75; %kg
 massTotal = massEmptyRocket + startingMassFuel +massHorse; % kg
 engineThrust = 	130000; %N
+area = 2 * 3.14;
 gravity = 9.81; %m/s/s
 density = 1.225; %kg/m3
 dragCoeficient = .05;
@@ -19,38 +26,47 @@ time = zeros(1,endTime/dt);  ; %Create empty vector of zeros for time Data
 burnTime = 60; %Time Engines are firing for.
 maxAltitude = 9999999999;
 endOfUsefulData = 0;
+pos = 0;
+vel = 0;
 %start a loop to calcualte our equations of motion at each Time Step
 
 for t = 1:1:(endTime/dt) %   t is the current TimeStep
+
+%Equation of motion
+    km = floor(pos / 1000) + 1; %we already compensated for matlab deficiencies
+    density = densityVector(km);
+    %1000 is added because else this drag is irrelevant compared to the trust and weight
+    drag = 0.5 * density * (vel * vel) * area * dragCoeficient * 1000;
+    if t <= (burnTime/dt) %while the engines are firing
+        acceleration(t) =  (engineThrust - drag - weight) / massTotal;
+    else %when the engines have stopped firing
+        acceleration(t) =  (-drag - weight) /massTotal;
+    end
+
+    
+time(t) = t*dt; % update the time vector with the new time step
+if t == 380
+ cry = 0
+end
 
 %Calculate the velocity and Position, by integrating.
 velocity = cumtrapz(time,acceleration);
 position = cumtrapz(time,velocity);
 
-%Equation of motion
-    
-    if t <= (burnTime/dt) %while the engines are firing
-        
-        acceleration(t) =  (engineThrust - drag - weight) /massTotal;
-        
-    else %when the engines have stopped firing
-        
-        acceleration(t) =  (-drag - weight) /massTotal;
-        
-    end
+%Current position (and velocity) are computed BAD, so take two step ago, to be safe
+  if t > 15
+    pos = position(t - 1);
+    vel = velocity(t - 1);
+  else
+    pos = 0;
+    vel = 0;
+  end
 
-    
-time(t) = t*dt; % update the time vector with the new time step
-
-
-%Current position is computed BAD, to take two step ago, to be safe
-  if t > 100 
-  pos = position(t - 2);
-    if pos < 0
-      endOfUsefulData = t - 2;
-      break %terminate the Simulation, we have finished here
-    end
-   end
+  if pos < 0
+    endOfUsefulData = t - 2;
+    break %terminate the Simulation, we have finished here
+  end
+   
     
 end
 
